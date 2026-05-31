@@ -1,0 +1,42 @@
+name: ecodata-hub
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecodata-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/economy_db
+      SPRING_DATASOURCE_USERNAME: eco_user
+      SPRING_DATASOURCE_PASSWORD: eco_pass
+      APP_ADMIN_USERNAME: admin
+      APP_ADMIN_PASSWORD: admin
+      APP_JWT_SECRET: change-this-compose-secret-before-production
+      NEWS_API_KEY: 2142cb7cc8ba4a829e73887f56de987d
+    ports:
+      - "8080:8080"
+
+  db:
+    image: mariadb:11.4
+    container_name: ecodata-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: economy_db
+      MARIADB_USER: eco_user
+      MARIADB_PASSWORD: eco_pass
+      MARIADB_ROOT_PASSWORD: root
+    volumes:
+      - ecodata-mariadb-data:/var/lib/mysql
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ecodata-mariadb-data:

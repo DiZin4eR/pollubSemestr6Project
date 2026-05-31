@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Variable data</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">EcoData Hub</a>
+    <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" th:href="@{/}">Home</a>
+        <a class="nav-link active" th:href="@{/indicators}">Indicators</a>
+        <a class="nav-link" th:href="@{/news}">News</a>
+        <a class="nav-link" th:href="@{/login}">Login</a>
+        <a class="nav-link" th:href="@{/signup}">Sign up</a>
+        <a class="nav-link" th:href="@{/logout}">Logout</a>
+    </nav>
+</header>
+
+<main class="page-shell">
+    <section class="page-heading">
+        <p class="eyebrow">Data</p>
+        <p th:if="${!#strings.isEmpty(subjectName)}"
+           class="eyebrow"
+           th:text="${subjectName}">Subject name</p>
+        <h1>
+            Variable <span class="mono" th:text="${variableId}">1</span>
+            <span th:if="${!#strings.isEmpty(variableName)}"
+                  th:text="' - ' + ${variableName}"> - Variable name</span>
+        </h1>
+        <p th:if="${!#strings.isEmpty(variableSubname)}"
+           class="lead"
+           th:text="${variableSubname}">Variable details</p>
+        <div class="actions compact-actions">
+            <a class="button secondary" th:href="@{/indicators}">Back to subjects</a>
+            <a th:if="${!loading}"
+               class="button secondary"
+               th:href="@{/indicators/variables/{variableId}/data/export.json(
+                    variableId=${variableId},
+                    subjectName=${subjectName},
+                    variableName=${variableName},
+                    variableSubname=${variableSubname},
+                    jobId=${jobId}
+               )}">Export JSON</a>
+        </div>
+    </section>
+
+    <section th:if="${loading}"
+             class="progress-card"
+             data-variable-data-job
+             th:data-job-id="${jobId}"
+             th:data-variable-id="${variableId}"
+             aria-label="GUS variable data progress">
+        <div class="progress-header">
+            <p class="progress-title">Fetching GUS data</p>
+            <span class="progress-label" data-progress-label>0%</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" data-progress-fill></div>
+        </div>
+        <p class="progress-detail" data-progress-detail th:text="${jobMessage}">Queued</p>
+    </section>
+
+    <section th:if="${!loading}" aria-label="GUS variable data">
+        <p th:if="${#lists.isEmpty(regions)}" class="empty">No data found for this variable.</p>
+        <div th:if="${!#lists.isEmpty(regions)}" class="region-grid">
+            <article th:each="region : ${regions}" class="region-card">
+                <header class="region-card-header">
+                    <div>
+                        <p class="region-id mono" th:text="${region.id}">0</p>
+                        <h2 th:text="${region.name}">Region</h2>
+                    </div>
+                    <span class="region-count"
+                          th:text="${(region.values != null ? #lists.size(region.values) : 0)} + ' values'">0 values</span>
+                </header>
+
+                <div class="region-chart-wrap" th:if="${!#lists.isEmpty(region.values)}">
+                    <canvas class="region-chart"
+                            height="190"
+                            aria-label="Region data chart"></canvas>
+                </div>
+
+                <div class="table-wrap region-table-wrap">
+                    <table class="data-table region-table">
+                        <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Value</th>
+                            <th>Attribute ID</th>
+                            <th>Attribute name</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(region.values)}">
+                            <td colspan="5" class="muted-cell">No values</td>
+                        </tr>
+                        <tr th:each="value : ${region.values}"
+                            th:with="attribute=${value.attrId != null ? attributeById[value.attrId] : null}"
+                            th:data-year="${value.year}"
+                            th:data-value="${value.val}">
+                            <td th:text="${value.year}">2024</td>
+                            <td th:text="${value.val}">0</td>
+                            <td th:text="${value.attrId ?: '-'}">-</td>
+                            <td th:text="${attribute != null ? attribute.name : '-'}">wartosc</td>
+                            <td th:text="${attribute != null && !#strings.isEmpty(attribute.description) ? attribute.description : '-'}">Description</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+<div class="page-loader" data-page-loader hidden aria-hidden="true" role="status" aria-live="polite">
+    <div class="loader-panel">
+        <div class="loader-spinner" aria-hidden="true"></div>
+        <div class="loader-text" data-loader-text>Processing request</div>
+    </div>
+</div>
+<script th:src="@{/js/region-charts.js}" defer></script>
+<script th:src="@{/js/variable-data-progress.js}" defer></script>
+<script th:src="@{/js/app-loading.js}" defer></script>
+</body>
+</html>

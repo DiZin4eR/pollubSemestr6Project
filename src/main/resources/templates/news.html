@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">EcoData Hub</a>
+    <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" th:href="@{/}">Home</a>
+        <a class="nav-link" th:href="@{/indicators}">Indicators</a>
+        <a class="nav-link active" th:href="@{/news}">News</a>
+        <a class="nav-link" th:href="@{/login}">Login</a>
+        <a class="nav-link" th:href="@{/signup}">Sign up</a>
+        <a class="nav-link" th:href="@{/logout}">Logout</a>
+    </nav>
+</header>
+
+<main class="page-shell">
+    <section class="page-heading">
+        <p class="eyebrow">News</p>
+        <h1>Business and economy news</h1>
+        <p class="lead">Latest stored articles from NewsAPI.</p>
+    </section>
+
+    <form class="filter-bar" method="get" th:action="@{/news}" aria-label="News search and filters">
+        <label class="field">
+            <span>Search</span>
+            <input type="search"
+                   name="q"
+                   placeholder="Title, content, or source"
+                   th:value="${q}">
+        </label>
+
+        <label class="field">
+            <span>Category</span>
+            <select name="category">
+                <option value="all" th:selected="${category == 'all'}">Business and economy</option>
+                <option value="business" th:selected="${category == 'business'}">Business</option>
+                <option value="economy" th:selected="${category == 'economy'}">Economy</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span>Sort</span>
+            <select name="sort">
+                <option value="newest" th:selected="${sort == 'newest'}">Newest</option>
+                <option value="oldest" th:selected="${sort == 'oldest'}">Oldest</option>
+                <option value="title" th:selected="${sort == 'title'}">Title</option>
+                <option value="source" th:selected="${sort == 'source'}">Source</option>
+            </select>
+        </label>
+
+        <div class="filter-actions">
+            <button class="button primary" type="submit">Apply</button>
+            <a class="button secondary" th:href="@{/news}">Clear</a>
+            <a class="button secondary"
+               th:href="@{/news/export.json(q=${q}, category=${category}, sort=${sort})}">Export JSON</a>
+        </div>
+    </form>
+
+    <section aria-label="Economic news articles">
+        <p th:if="${#lists.isEmpty(articles)}" class="empty">No news articles found.</p>
+
+        <div th:if="${!#lists.isEmpty(articles)}" class="news-list">
+            <article th:each="article : ${articles}" class="news-card">
+                <header class="news-card-header">
+                    <div class="news-meta">
+                        <span th:if="${article.publicationDate != null}"
+                              th:text="${#temporals.format(article.publicationDate, 'yyyy-MM-dd')}">2026-05-29</span>
+                        <span th:if="${!#strings.isEmpty(article.category)}"
+                              th:text="${article.category}">Category</span>
+                    </div>
+
+                    <h2 th:text="${article.title}">Article title</h2>
+                </header>
+
+                <p class="news-content" th:text="${article.content}">Article content</p>
+
+                <footer class="news-footer">
+                    <span th:text="${article.source}">News source</span>
+                    <a th:if="${!#strings.isEmpty(article.sourceUrl)}"
+                       th:href="${article.sourceUrl}"
+                       target="_blank"
+                       rel="noopener noreferrer">Open source</a>
+                </footer>
+            </article>
+        </div>
+    </section>
+</main>
+<div class="page-loader" data-page-loader hidden aria-hidden="true" role="status" aria-live="polite">
+    <div class="loader-panel">
+        <div class="loader-spinner" aria-hidden="true"></div>
+        <div class="loader-text" data-loader-text>Processing request</div>
+    </div>
+</div>
+<script th:src="@{/js/app-loading.js}" defer></script>
+</body>
+</html>

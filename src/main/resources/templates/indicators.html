@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicators</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">EcoData Hub</a>
+    <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" th:href="@{/}">Home</a>
+        <a class="nav-link active" th:href="@{/indicators}">Indicators</a>
+        <a class="nav-link" th:href="@{/news}">News</a>
+        <a class="nav-link" th:href="@{/login}">Login</a>
+        <a class="nav-link" th:href="@{/signup}">Sign up</a>
+        <a class="nav-link" th:href="@{/logout}">Logout</a>
+    </nav>
+</header>
+
+<main class="page-shell">
+    <section class="page-heading">
+        <p class="eyebrow">Subject navigator</p>
+        <h1>Indicators</h1>
+        <div class="metrics-row" aria-label="Indicator metrics">
+            <div class="metric">
+                <span class="metric-value" th:text="${subjectsWithVariablesCount}">0</span>
+                <span class="metric-label">subjects with variables</span>
+            </div>
+            <div class="metric">
+                <span class="metric-value" th:text="${visibleSubjectsCount}">0</span>
+                <span class="metric-label">visible subjects</span>
+            </div>
+        </div>
+    </section>
+
+    <form class="filter-bar" method="get" th:action="@{/indicators}" aria-label="Indicator search and filters">
+        <label class="field">
+            <span>Search</span>
+            <input type="search"
+                   name="q"
+                   placeholder="Subject name or ID"
+                   th:value="${q}">
+        </label>
+
+        <label class="field">
+            <span>Filter</span>
+            <select name="type">
+                <option value="all" th:selected="${type == 'all'}">All subjects</option>
+                <option value="variables" th:selected="${type == 'variables'}">With variables</option>
+                <option value="categories" th:selected="${type == 'categories'}">Categories only</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span>Sort</span>
+            <select name="sort">
+                <option value="id" th:selected="${sort == 'id'}">ID</option>
+                <option value="name" th:selected="${sort == 'name'}">Name</option>
+            </select>
+        </label>
+
+        <div class="filter-actions">
+            <button class="button primary" type="submit">Apply</button>
+            <a class="button secondary" th:href="@{/indicators}">Clear</a>
+            <a class="button secondary"
+               th:href="@{/indicators/export.json(q=${q}, type=${type}, sort=${sort})}">Export JSON</a>
+        </div>
+    </form>
+
+    <section class="tree-panel" aria-label="GUS subject tree">
+        <p th:if="${#lists.isEmpty(subjectTree)}" class="empty">No GUS subjects stored yet.</p>
+        <div th:if="${!#lists.isEmpty(subjectTree)}"
+             th:replace="~{indicators :: subjectTree(${subjectTree})}"></div>
+    </section>
+</main>
+
+<div th:fragment="subjectTree(nodes)">
+    <ul class="subject-tree">
+        <li th:each="node : ${nodes}" class="subject-tree-item">
+            <details class="subject-node" th:open="${node.subject.parentGusId == null}">
+                <summary class="subject-summary">
+                    <span class="subject-main">
+                        <span class="subject-id mono" th:text="${node.subject.gusId}">K1</span>
+                        <a th:if="${node.subject.hasVariables}"
+                           class="subject-name subject-link"
+                           th:href="@{/indicators/{subjectId}/variables(subjectId=${node.subject.gusId})}"
+                           th:text="${node.subject.name}">Subject name</a>
+                        <span th:if="${!node.subject.hasVariables}"
+                              class="subject-name"
+                              th:text="${node.subject.name}">Subject name</span>
+                    </span>
+                    <span class="subject-meta">
+                        <span class="status" th:classappend="${node.subject.hasVariables} ? ' yes' : ' no'"
+                              th:text="${node.subject.hasVariables} ? 'Variables' : 'Category'">Variables</span>
+                        <span class="subject-count"
+                              th:text="${#lists.size(node.children)} + ' children'">0 children</span>
+                    </span>
+                </summary>
+
+                <div class="subject-children" th:if="${!#lists.isEmpty(node.children)}"
+                     th:replace="~{indicators :: subjectTree(${node.children})}"></div>
+            </details>
+        </li>
+    </ul>
+</div>
+<div class="page-loader" data-page-loader hidden aria-hidden="true" role="status" aria-live="polite">
+    <div class="loader-panel">
+        <div class="loader-spinner" aria-hidden="true"></div>
+        <div class="loader-text" data-loader-text>Processing request</div>
+    </div>
+</div>
+<script th:src="@{/js/app-loading.js}" defer></script>
+</body>
+</html>
