@@ -1,36 +1,67 @@
 # EcoData Hub
 
-Aplikacja webowa Spring Boot integrujaca dane gospodarcze z API GUS oraz artykuly z News API. Interfejs HTML jest renderowany po stronie backendu z uzyciem Thymeleaf, a dane aplikacji sa przechowywane w bazie MariaDB.
+EcoData Hub is a Spring Boot web application that integrates economic indicator data from the GUS API with economic news from News API. The UI is rendered with Thymeleaf, data is stored in MariaDB, and access to the application is protected with JWT authentication.
 
-## Funkcje
+## Features
 
-- przegladanie tematow i wskaznikow GUS,
-- pobieranie danych dla wybranych zmiennych,
-- lista aktualnosci gospodarczych,
-- eksport wybranych widokow do JSON,
-- REST API dla zasobow bazodanowych z dokumentacja Swagger UI.
+- browse GUS subjects and indicators,
+- load variable data from GUS with visible job progress,
+- export indicator, variable data, and news views to JSON,
+- browse economic news from News API,
+- use protected REST CRUD endpoints for stored GUS and news data,
+- inspect protected API documentation through Swagger UI,
+- track backend requests with `X-Request-Id` and correlated log entries.
 
-## Wymagania
+## Requirements
 
 - Docker,
 - Docker Compose,
-- opcjonalnie Java 17, jezeli aplikacja ma byc uruchamiana lokalnie bez kontenerow.
+- Java 17 only when running the backend locally without containers.
 
-## Uruchomienie z Docker CLI
+## Running With Docker Compose
 
-1. Zbuduj obraz aplikacji:
+Start the backend and MariaDB containers from the project root:
+
+```bash
+docker compose up --build
+```
+
+Open the application:
+
+```text
+http://localhost:8080/
+```
+
+The Compose setup exposes only the backend on host port `8080`. The MariaDB container is available only inside the Docker network as `db:3306`, so it does not conflict with a local MariaDB installation on host port `3306`.
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+Recreate the database from scratch and rerun the GUS init import:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+## Running With Docker CLI
+
+Build the backend image:
 
 ```bash
 docker build -t ecodata-hub .
 ```
 
-2. Utworz siec dla kontenerow:
+Create a shared Docker network:
 
 ```bash
 docker network create ecodata-network
 ```
 
-3. Uruchom kontener bazy danych:
+Start MariaDB:
 
 ```bash
 docker run -d \
@@ -45,9 +76,13 @@ docker run -d \
   mariadb:11.4
 ```
 
-Port bazy nie jest mapowany na hosta, aby uniknac konfliktu z lokalna MariaDB na porcie `3306`. Backend laczy sie z baza przez siec Dockera: `ecodata-db:3306`. Jezeli potrzebny jest dostep do bazy z hosta, dodaj mapowanie na wolny port, np. `-p 3307:3306`.
+If host access to this database is needed, publish it on a free host port, for example `3307`:
 
-4. Uruchom kontener backendu:
+```bash
+-p 3307:3306
+```
+
+Start the backend:
 
 ```bash
 docker run -d \
@@ -59,58 +94,42 @@ docker run -d \
   -e APP_ADMIN_USERNAME=admin \
   -e APP_ADMIN_PASSWORD=admin \
   -e APP_JWT_SECRET=change-this-secret \
-  -e NEWS_API_KEY=2142cb7cc8ba4a829e73887f56de987d \
+  -e NEWS_API_KEY=your_news_api_key_here \
   -p 8080:8080 \
   ecodata-hub
 ```
 
-5. Otworz aplikacje:
+## Authentication
 
-- strona glowna: `http://localhost:8080/`
-- Swagger UI po zalogowaniu: `http://localhost:8080/swagger-ui.html`
+- user registration: `http://localhost:8080/signup`,
+- login: `http://localhost:8080/login`,
+- logout: `http://localhost:8080/logout`,
+- Swagger UI after login: `http://localhost:8080/swagger-ui.html`,
+- all pages, API endpoints, and Swagger documentation require login, except `/login`, `/signup`, static CSS/JS files, `/error`, and `POST /api/auth/login`,
+- the admin account is seeded on startup from `APP_ADMIN_USERNAME` and `APP_ADMIN_PASSWORD`,
+- browser login stores JWT in the HttpOnly `AUTH_TOKEN` cookie,
+- API clients can send `Authorization: Bearer <token>`,
+- API token can be obtained with `POST /api/auth/login`.
 
-Konta i autoryzacja:
-
-- konto uzytkownika mozna utworzyc przez `http://localhost:8080/signup`,
-- logowanie jest dostepne pod `http://localhost:8080/login`,
-- wszystkie strony aplikacji, endpointy API i dokumentacja Swagger wymagaja zalogowania poza `/login`, `/signup`, plikami CSS/JS i `POST /api/auth/login`,
-- administrator jest seedowany przy starcie z `APP_ADMIN_USERNAME` / `APP_ADMIN_PASSWORD`,
-- po zalogowaniu aplikacja zapisuje JWT w ciasteczku HttpOnly `AUTH_TOKEN`,
-- API przyjmuje tez naglowek `Authorization: Bearer <token>`.
-
-## Uruchomienie z docker-compose
-
-Uruchom aplikacje i baze danych:
+Example API login:
 
 ```bash
-docker compose up --build
+curl -X POST http://localhost:8080/api/auth/login \
+  -d "username=admin" \
+  -d "password=admin"
 ```
 
-Aplikacja bedzie dostepna pod adresem `http://localhost:8080/`.
-Kontener bazy danych nie publikuje portu `3306` na hoście, więc Compose moze dzialac rownolegle z lokalna MariaDB.
+Read-only API endpoints require role `USER` or `ADMIN`. Mutating `/api/**` endpoints require role `ADMIN`.
 
-Zatrzymanie kontenerow:
+## GUS Initial Data
 
-```bash
-docker compose down
+Importing the GUS subject tree by calling the GUS API is slow because requests are rate-limited. The project therefore includes an initial SQL data pack:
+
+```text
+docker/mariadb/init/01-gus-initial-data.sql
 ```
 
-Zatrzymanie kontenerow i usuniecie wolumenu bazy danych:
-
-```bash
-docker compose down -v
-```
-
-## Dane startowe GUS
-
-Import tematow GUS jest wolny, bo aplikacja ogranicza czestotliwosc zapytan do API GUS. Z tego powodu projekt zawiera startowa paczke danych `docker/mariadb/init/01-gus-initial-data.sql`.
-
-`docker-compose.yaml` uzywa dwoch mechanizmow:
-
-- wolumen `ecodata-mariadb-data` przechowuje baze pomiedzy restartami kontenerow,
-- katalog `docker/mariadb/init` jest montowany jako `/docker-entrypoint-initdb.d`, dzieki czemu MariaDB automatycznie importuje pliki `.sql` przy pierwszym starcie pustej bazy.
-
-Obecna paczka startowa zawiera tylko dane GUS:
+MariaDB automatically imports files mounted into `/docker-entrypoint-initdb.d` only when the database volume is empty. The included pack contains only GUS tables:
 
 - `gus_data_attributes`,
 - `gus_subjects`,
@@ -118,7 +137,9 @@ Obecna paczka startowa zawiera tylko dane GUS:
 - `gus_subject_levels`,
 - `gus_subject_import_states`.
 
-Nie zawiera danych aktualnosci ani starych tabel testowych. Aby odswiezyc paczke po ponownym imporcie tematow GUS, wykonaj:
+It does not import news data or old test tables.
+
+To refresh the SQL pack from an existing Docker database:
 
 ```bash
 mkdir -p docker/mariadb/init
@@ -126,6 +147,7 @@ docker exec ecodata-db mariadb-dump \
   -uroot \
   -proot \
   economy_db \
+  gus_data_attributes \
   gus_subjects \
   gus_subject_children \
   gus_subject_levels \
@@ -133,14 +155,31 @@ docker exec ecodata-db mariadb-dump \
   > docker/mariadb/init/01-gus-initial-data.sql
 ```
 
-Przy kolejnym tworzeniu bazy od zera MariaDB automatycznie wykona plik `docker/mariadb/init/01-gus-initial-data.sql`. Mechanizm init dziala tylko dla pustego katalogu danych, wiec aby go przetestowac, trzeba usunac wolumen:
+## Request Tracking And Long GUS Jobs
+
+Every backend request receives an `X-Request-Id` response header. The same ID is written to logs through MDC, which helps trace slow GUS, News API, export, and page requests.
+
+Follow backend logs in Compose:
 
 ```bash
-docker compose down -v
-docker compose up --build
+docker compose logs -f backend
 ```
 
-## Struktura projektu
+Variable data loading runs as a background job. The page polls:
+
+```text
+/api/gus/variable-data-jobs/{jobId}
+```
+
+The progress bar is based on fetched GUS pages compared with the expected total. The variable data JSON export uses the completed in-memory job result and returns `409 Conflict` if export is requested before the job finishes.
+
+The GUS request delay is configured in `application.properties`:
+
+```properties
+gus.request-delay=10s
+```
+
+## Project Structure
 
 ```text
 .
@@ -148,46 +187,35 @@ docker compose up --build
 |-- docker-compose.yaml
 |-- docker/
 |   |-- mariadb/
-|       |-- init/             # opcjonalne dumpy SQL ladowane do pustej bazy
+|       |-- init/             # SQL files imported by MariaDB on first empty-volume startup
 |-- build.gradle
 |-- settings.gradle
-|-- gradlew
-|-- gradle/
 |-- src/
 |   |-- main/
 |   |   |-- java/com/ecodatahub/
-|   |   |   |-- config/        # konfiguracja Spring, OpenAPI, Security i klientow HTTP
-|   |   |   |-- controller/    # kontrolery MVC i REST
-|   |   |   |-- gus/           # modul danych GUS: API, DTO, encje, repozytoria, serwisy
-|   |   |   |-- news/          # modul aktualnosci: API NewsAPI, encje, repozytoria, serwisy
+|   |   |   |-- auth/         # login, signup, JWT, user account persistence
+|   |   |   |-- config/       # Spring Security, OpenAPI, HTTP client, request logging
+|   |   |   |-- controller/   # MVC pages and REST endpoints
+|   |   |   |-- gus/          # GUS API client, domain, repositories, services, web DTOs
+|   |   |   |-- news/         # News API client, domain, repositories, services, web DTOs
 |   |   |   |-- EcoDataHubApplication.java
 |   |   |-- resources/
 |   |       |-- application.properties
-|   |       |-- static/        # CSS i JavaScript
-|   |       |-- templates/     # szablony Thymeleaf
-|   |-- test/                 # testy automatyczne
+|   |       |-- static/
+|   |       |   |-- css/
+|   |       |   |-- js/        # loaders, charts, GUS job progress polling
+|   |       |-- templates/    # Thymeleaf pages, including auth views
+|   |-- test/                # automated tests
 ```
 
-## Konfiguracja
+## Configuration
 
-Najwazniejsze zmienne srodowiskowe:
+Important environment variables:
 
-- `SPRING_DATASOURCE_URL` - adres JDBC bazy MariaDB,
-- `SPRING_DATASOURCE_USERNAME` - uzytkownik bazy danych,
-- `SPRING_DATASOURCE_PASSWORD` - haslo bazy danych,
-- `NEWS_API_KEY` - klucz do News API,
-- `APP_ADMIN_USERNAME`, `APP_ADMIN_PASSWORD` - konto administratora.
-- `APP_JWT_SECRET` - sekret do podpisywania tokenow JWT.
-
-## Wykorzystanie sztucznej inteligencji
-
-Podczas przygotowania konteneryzacji i dokumentacji wykorzystano model LLM ChatGPT/Codex. Wygenerowane lub wspoltworzone przez LLM fragmenty obejmuja:
-
-- `Dockerfile` - wieloetapowy obraz aplikacji Spring Boot,
-- `.dockerignore` - ograniczenie kontekstu budowania obrazu,
-- `docker-compose.yaml` - uruchomienie backendu i bazy MariaDB w osobnych kontenerach,
-- `README.md` - opis aplikacji, instrukcje uruchamiania i opis struktury projektu.
-
-Wygenerowane tresci zostaly dopasowane do istniejacej konfiguracji projektu: Gradle, Java 17, MariaDB, port `8080`, zmienne Spring Boot oraz aktualna struktura pakietow. Link do rozmowy z LLM nalezy dolaczyc w systemie oddawania projektu albo zastapic te sekcje eksportem/podsumowaniem rozmowy, jezeli link nie jest dostepny.
-
-Podsumowanie kontekstu rozmowy znajduje sie w pliku `LLM_CONTEXT.md`.
+- `SPRING_DATASOURCE_URL` - MariaDB JDBC URL,
+- `SPRING_DATASOURCE_USERNAME` - database user,
+- `SPRING_DATASOURCE_PASSWORD` - database password,
+- `NEWS_API_KEY` - News API key,
+- `APP_ADMIN_USERNAME` - seeded admin username,
+- `APP_ADMIN_PASSWORD` - seeded admin password,
+- `APP_JWT_SECRET` - JWT signing secret.
