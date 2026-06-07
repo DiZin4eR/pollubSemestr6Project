@@ -17,8 +17,11 @@ services:
       APP_ADMIN_PASSWORD: admin
       APP_JWT_SECRET: change-this-compose-secret-before-production
       NEWS_API_KEY: 2142cb7cc8ba4a829e73887f56de987d
+      APP_PROFILE_PHOTOS_DIR: /app/uploads/profile-photos
     ports:
       - "8080:8080"
+    volumes:
+      - ecodata-profile-photos:/app/uploads/profile-photos
 
   db:
     image: mariadb:11.4
@@ -40,3 +43,4 @@ services:
 
 volumes:
   ecodata-mariadb-data:
+  ecodata-profile-photos:

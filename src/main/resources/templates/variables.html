@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,9 +15,8 @@
         <a class="nav-link active" th:href="@{/indicators}">Indicators</a>
         <a class="nav-link" th:href="@{/news}">News</a>
         <a class="nav-link" th:href="@{/swagger-ui.html}">Documentation</a>
-        <a class="nav-link" th:href="@{/login}">Login</a>
-        <a class="nav-link" th:href="@{/signup}">Sign up</a>
-        <a class="nav-link" th:href="@{/logout}">Logout</a>
+        <a class="nav-link" th:href="@{/users}" sec:authorize="isAuthenticated()">User</a>
+        <a class="nav-link" th:href="@{/login}" sec:authorize="isAnonymous()">Login</a>
     </nav>
 </header>
 
@@ -31,6 +30,8 @@
     </section>
 
     <section aria-label="GUS variables">
+        <div class="alert success" th:if="${variableMessage}" th:text="${variableMessage}">Loaded variables.</div>
+        <div class="alert error" th:if="${variableError}" th:text="${variableError}">Could not load variables.</div>
         <p th:if="${#lists.isEmpty(variables)}" class="empty">No variables found for this subject.</p>
         <div th:if="${!#lists.isEmpty(variables)}" class="table-wrap">
             <table class="data-table">
@@ -53,6 +54,7 @@
                         <a class="button secondary small"
                            th:href="@{/indicators/variables/{variableId}/data(
                                 variableId=${variable.id},
+                                subjectId=${subjectId},
                                 subjectName=${subject != null ? subject.name : subjectId},
                                 variableName=${variable.name},
                                 variableSubname=${variable.subname}

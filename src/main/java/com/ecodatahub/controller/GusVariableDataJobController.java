@@ -19,8 +19,11 @@ public class GusVariableDataJobController {
     private final GusVariableDataJobService jobService;
 
     @PostMapping
-    public GusVariableDataJobResponse start(@RequestParam String variableId) {
-        return GusVariableDataJobResponse.from(jobService.start(variableId));
+    public GusVariableDataJobResponse start(
+            @RequestParam String variableId,
+            @RequestParam(required = false) String subjectId
+    ) {
+        return GusVariableDataJobResponse.from(jobService.start(variableId, subjectId));
     }
 
     @GetMapping("/{jobId}")

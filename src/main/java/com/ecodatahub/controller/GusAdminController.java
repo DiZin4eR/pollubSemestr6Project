@@ -10,6 +10,7 @@ import com.ecodatahub.gus.api.dto.GUSDataRegionDto;
 import com.ecodatahub.gus.api.dto.GUSSubjectDto;
 import com.ecodatahub.gus.api.dto.GUSVariableDto;
 import com.ecodatahub.gus.service.GusSubjectImportService;
+import com.ecodatahub.gus.service.GusVariableDataCacheService;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class GusAdminController {
 
     private final GusApiClient gusClient;
     private final GusSubjectImportService gusSubjectImportService;
+    private final GusVariableDataCacheService variableDataCacheService;
 
     @GetMapping("/subjects")
     public List<GUSSubjectDto> getRootSubjects() {
@@ -38,7 +40,9 @@ public class GusAdminController {
 
     @GetMapping("/data/by-variable/{variable}")
     public List<GUSDataRegionDto> getDataByVariable(@PathVariable String variable) {
-        return gusClient.getDataByVariable(variable);
+        return variableDataCacheService.getFresh(variable)
+                .orElseGet(() -> variableDataCacheService.save(variable, gusClient.getDataByVariable(variable)))
+                .regions();
     }
 
     @GetMapping("/subjects/import")

@@ -20,14 +20,27 @@ import java.util.concurrent.Executors;
 public class GusVariableDataJobService {
 
     private final GusApiClient gusApiClient;
+    private final GusVariableDataCacheService cacheService;
+    private final GusImportedVariableService importedVariableService;
     private final Map<String, VariableDataJob> jobs = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     public VariableDataJob start(String variableId) {
+        return start(variableId, null);
+    }
+
+    public VariableDataJob start(String variableId, String subjectId) {
         String jobId = UUID.randomUUID().toString();
-        VariableDataJob job = new VariableDataJob(jobId, variableId);
+        VariableDataJob job = new VariableDataJob(jobId, variableId, subjectId);
 
         jobs.put(jobId, job);
+
+        cacheService.getFresh(variableId)
+                .ifPresent(cachedData -> job.markCompletedFromDatabase(cachedData.regions(), cachedData.fetchedAt()));
+
+        if ("completed".equals(job.getState())) {
+            return job;
+        }
 
         executorService.submit(() -> run(job));
 
@@ -46,14 +59,36 @@ public class GusVariableDataJobService {
         job.markRunning();
 
         try {
+            validateVariableExists(job);
+
             List<GUSDataRegionDto> regions = gusApiClient.getDataByVariable(
                     job.getVariableId(),
                     progress -> job.updateProgress(progress.completedRequests(), progress.totalRequests())
             );
+            GusVariableDataCacheService.CachedVariableData cachedData = cacheService.save(job.getVariableId(), regions);
 
-            job.markCompleted(regions);
+            job.markCompletedFromApi(cachedData.regions(), cachedData.fetchedAt());
         } catch (RuntimeException exception) {
             job.markFailed(exception.getMessage());
+        }
+    }
+
+    private void validateVariableExists(VariableDataJob job) {
+        if (job.getSubjectId() == null || job.getSubjectId().isBlank()) {
+            return;
+        }
+
+        if (importedVariableService.exists(job.getVariableId())) {
+            return;
+        }
+
+        boolean exists = gusApiClient.getAllVariables(job.getSubjectId()).stream()
+                .anyMatch(variable -> job.getVariableId().equals(variable.getId()));
+
+        if (!exists) {
+            throw new IllegalArgumentException(
+                    "Variable " + job.getVariableId() + " does not exist in GUS subject " + job.getSubjectId()
+            );
         }
     }
 
@@ -66,16 +101,20 @@ public class GusVariableDataJobService {
 
         private final String id;
         private final String variableId;
+        private final String subjectId;
         private final Instant createdAt = Instant.now();
         private volatile String state = "queued";
         private volatile int completedRequests;
         private volatile int totalRequests = 1;
         private volatile String message = "Queued";
         private volatile List<GUSDataRegionDto> regions = List.of();
+        private volatile Instant dataFetchedAt;
+        private volatile String dataSource = "api";
 
-        private VariableDataJob(String id, String variableId) {
+        private VariableDataJob(String id, String variableId, String subjectId) {
             this.id = id;
             this.variableId = variableId;
+            this.subjectId = subjectId;
         }
 
         public void markRunning() {
@@ -96,6 +135,20 @@ public class GusVariableDataJobService {
             message = "Completed";
         }
 
+        public void markCompletedFromDatabase(List<GUSDataRegionDto> regions, Instant fetchedAt) {
+            markCompleted(regions);
+            this.dataFetchedAt = fetchedAt;
+            this.dataSource = "database";
+            message = "Loaded from database";
+        }
+
+        public void markCompletedFromApi(List<GUSDataRegionDto> regions, Instant fetchedAt) {
+            markCompleted(regions);
+            this.dataFetchedAt = fetchedAt;
+            this.dataSource = "api";
+            message = "Fetched from GUS API and saved to database";
+        }
+
         public void markFailed(String message) {
             state = "failed";
             this.message = message == null || message.isBlank() ? "Request failed" : message;
@@ -107,6 +160,10 @@ public class GusVariableDataJobService {
 
         public String getVariableId() {
             return variableId;
+        }
+
+        public String getSubjectId() {
+            return subjectId;
         }
 
         public Instant getCreatedAt() {
@@ -139,6 +196,14 @@ public class GusVariableDataJobService {
 
         public List<GUSDataRegionDto> getRegions() {
             return regions;
+        }
+
+        public Instant getDataFetchedAt() {
+            return dataFetchedAt;
+        }
+
+        public String getDataSource() {
+            return dataSource;
         }
     }
 }

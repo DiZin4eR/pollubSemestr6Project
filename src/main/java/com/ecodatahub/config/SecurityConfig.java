@@ -28,12 +28,16 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/",
                                 "/login",
                                 "/signup",
                                 "/css/**",
                                 "/js/**",
                                 "/favicon.ico",
                                 "/error",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
                                 "/api/auth/login"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -34,4 +34,10 @@ public class UserAccount {
 
     @Column(nullable = false)
     private String role;
+
+    @Column(name = "profile_photo_path")
+    private String profilePhotoPath;
+
+    @Column(name = "profile_photo_content_type")
+    private String profilePhotoContentType;
 }

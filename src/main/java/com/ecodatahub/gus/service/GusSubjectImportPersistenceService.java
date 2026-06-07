@@ -12,6 +12,7 @@ import com.ecodatahub.gus.repository.GUSSubjectRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -74,6 +75,29 @@ public class GusSubjectImportPersistenceService {
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public ImportResult importSubjects(List<GUSSubjectDto> subjectDtos) {
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+        Set<String> importedIds = new HashSet<>();
+
+        for (GUSSubjectDto subjectDto : emptyIfNull(subjectDtos)) {
+            if (!isImportable(subjectDto) || !importedIds.add(subjectDto.getId())) {
+                skipped++;
+                continue;
+            }
+
+            if (saveSubject(subjectDto)) {
+                created++;
+            } else {
+                updated++;
+            }
+        }
+
+        return new ImportResult(created, updated, skipped);
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void markParentImported(String parentToken) {
         GUSSubjectImportState state = importStateRepository.findByParentKey(parentToken)
                 .orElseGet(GUSSubjectImportState::new);
@@ -96,5 +120,23 @@ public class GusSubjectImportPersistenceService {
 
     private <T> List<T> emptyIfNull(List<T> values) {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
+    }
+
+    private boolean isImportable(GUSSubjectDto subjectDto) {
+        return subjectDto != null
+                && subjectDto.getId() != null
+                && !subjectDto.getId().isBlank()
+                && subjectDto.getName() != null
+                && !subjectDto.getName().isBlank();
+    }
+
+    public record ImportResult(
+            int created,
+            int updated,
+            int skipped
+    ) {
+        public int totalPersisted() {
+            return created + updated;
+        }
     }
 }
