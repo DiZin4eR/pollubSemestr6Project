@@ -3,6 +3,7 @@ package com.ecodatahub.auth.web;
 import com.ecodatahub.auth.service.UserAccountService;
 import com.ecodatahub.auth.service.UserProfilePhotoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +56,7 @@ public class UserPageController {
                         .contentType(MediaType.parseMediaType(photo.contentType()))
                         .cacheControl(CacheControl.noCache())
                         .body(photo.resource()))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> fallbackAvatar(authentication.getName()));
     }
 
     @PostMapping("/users/profile-photo/delete")
@@ -71,5 +72,32 @@ public class UserPageController {
         }
 
         return "redirect:/users";
+    }
+
+    private ResponseEntity<Resource> fallbackAvatar(String username) {
+        String initial = username == null || username.isBlank()
+                ? "U"
+                : username.substring(0, 1).toUpperCase();
+        String safeInitial = initial
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+        String svg = """
+                <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+                  <defs>
+                    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#d8f3ef"/>
+                      <stop offset="1" stop-color="#eef3f7"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="96" height="96" rx="48" fill="url(#g)"/>
+                  <text x="48" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="#115e59">%s</text>
+                </svg>
+                """.formatted(safeInitial);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("image/svg+xml"))
+                .cacheControl(CacheControl.noCache())
+                .body(new ByteArrayResource(svg.getBytes()));
     }
 }

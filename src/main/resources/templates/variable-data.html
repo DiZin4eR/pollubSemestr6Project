@@ -14,7 +14,7 @@
         <a class="nav-link active" th:href="@{/indicators}">Indicators</a>
         <a class="nav-link" th:href="@{/news}">News</a>
         <a class="nav-link" th:href="@{/swagger-ui.html}">Documentation</a>
-        <a class="nav-link" th:href="@{/users}" sec:authorize="isAuthenticated()">User</a>
+        <a class="nav-avatar-link" th:href="@{/users}" sec:authorize="isAuthenticated()" aria-label="User profile"><img class="nav-avatar" th:src="@{/users/profile-photo}" alt=""></a>
         <a class="nav-link" th:href="@{/login}" sec:authorize="isAnonymous()">Login</a>
     </nav>
 </header>

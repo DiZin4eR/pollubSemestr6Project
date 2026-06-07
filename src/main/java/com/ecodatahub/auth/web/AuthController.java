@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -71,6 +72,14 @@ public class AuthController {
     @GetMapping("/logout")
     public String logout(HttpServletResponse response) {
         clearAuthCookie(response);
+        SecurityContextHolder.clearContext();
+        return "redirect:/login";
+    }
+
+    @PostMapping("/logout")
+    public String logoutPost(HttpServletResponse response) {
+        clearAuthCookie(response);
+        SecurityContextHolder.clearContext();
         return "redirect:/login";
     }
 

@@ -123,6 +123,31 @@ body {
     color: var(--accent-dark);
 }
 
+.nav-avatar-link {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    text-decoration: none;
+}
+
+.nav-avatar-link:hover,
+.nav-avatar-link.active {
+    background: var(--accent-soft);
+    border-color: #9fd8cf;
+}
+
+.nav-avatar {
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--accent-soft);
+    border-radius: 999px;
+    background: #eef3f7;
+    object-fit: cover;
+}
+
 .page-shell {
     width: min(1180px, calc(100% - 40px));
     margin: 0 auto;
