@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import indicators</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">EcoData Hub</a>
+    <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" th:href="@{/}">Home</a>
+        <a class="nav-link active" th:href="@{/indicators}">Indicators</a>
+        <a class="nav-link" th:href="@{/news}">News</a>
+        <a class="nav-link" th:href="@{/swagger-ui.html}">Documentation</a>
+        <a class="nav-link" th:href="@{/users}" sec:authorize="isAuthenticated()">User</a>
+        <a class="nav-link" th:href="@{/login}" sec:authorize="isAnonymous()">Login</a>
+    </nav>
+</header>
+
+<main class="page-shell">
+    <section class="page-heading">
+        <p class="eyebrow">JSON import</p>
+        <h1>Import indicators and variable data</h1>
+        <p class="lead">
+            Upload subject JSON, variable data export JSON, or one combined JSON file. Imported variable data is stored in
+            the database cache and used until it becomes older than 7 days.
+        </p>
+        <div class="actions compact-actions">
+            <a class="button secondary" th:href="@{/indicators}">Back to indicators</a>
+        </div>
+    </section>
+
+    <section class="import-panel" aria-label="Import indicator and variable JSON">
+        <div class="alert success" th:if="${importMessage}" th:text="${importMessage}">Import completed.</div>
+        <div class="alert error" th:if="${importError}" th:text="${importError}">Import failed.</div>
+
+        <form class="import-form"
+              method="post"
+              enctype="multipart/form-data"
+              th:action="@{/indicators/import.json}">
+            <label class="field import-file">
+                <span>JSON file</span>
+                <input type="file" name="file" accept="application/json,.json" required>
+            </label>
+            <button class="button primary" type="submit">Import JSON</button>
+        </form>
+    </section>
+
+    <section class="import-panel" aria-label="Supported import data">
+        <h2>Supported data</h2>
+        <div class="import-help-grid">
+            <article>
+                <h3>Indicators</h3>
+                <p class="muted-cell">
+                    Use files with a top-level <span class="mono">subjects</span> array or exported
+                    <span class="mono">subjectTree</span> data.
+                </p>
+            </article>
+            <article>
+                <h3>Variable data</h3>
+                <p class="muted-cell">
+                    Use JSON exported from a variable data page. It must contain
+                    <span class="mono">variableId</span> and <span class="mono">regions</span>.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section class="import-panel" aria-label="Import JSON example">
+        <h2>Example JSON</h2>
+        <p class="muted-cell">
+            A full import should include indicator subjects and matching variable data. The subject referenced by
+            <span class="mono">variableData.subjectId</span> must exist in the same file or already be stored.
+        </p>
+        <pre class="json-example"><code>{
+  "subjects": [
+    {
+      "id": "KIMP_FULL",
+      "parentId": null,
+      "name": "Imported full sample indicators",
+      "hasVariables": false,
+      "children": ["KIMP_FULL_ECO"],
+      "levels": [1]
+    },
+    {
+      "id": "KIMP_FULL_ECO",
+      "parentId": "KIMP_FULL",
+      "name": "Imported economy data",
+      "hasVariables": false,
+      "children": ["KIMP_FULL_ECO_GDP"],
+      "levels": [1, 2]
+    },
+    {
+      "id": "KIMP_FULL_ECO_GDP",
+      "parentId": "KIMP_FULL_ECO",
+      "name": "Imported GDP data",
+      "hasVariables": true,
+      "children": [],
+      "levels": [1, 2, 3]
+    }
+  ],
+  "variableData": [
+    {
+      "variableId": "KIMP_VAR_GDP",
+      "subjectId": "KIMP_FULL_ECO_GDP",
+      "variableName": "Imported GDP sample variable",
+      "variableSubname": "Annual index, previous year = 100",
+      "regions": [
+        {
+          "id": "PL",
+          "name": "Poland",
+          "values": [
+            { "year": "2021", "val": "100.0", "attrId": null },
+            { "year": "2022", "val": "106.4", "attrId": null }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+    </section>
+</main>
+<div class="page-loader" data-page-loader hidden aria-hidden="true" role="status" aria-live="polite">
+    <div class="loader-panel">
+        <div class="loader-spinner" aria-hidden="true"></div>
+        <div class="loader-text" data-loader-text>Processing request</div>
+    </div>
+</div>
+<script th:src="@{/js/app-loading.js}" defer></script>
+</body>
+</html>

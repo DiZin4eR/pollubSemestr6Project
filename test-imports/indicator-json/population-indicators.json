@@ -1,0 +1,44 @@
+{
+  "subjects": [
+    {
+      "id": "KIMP_POP",
+      "parentId": null,
+      "name": "Population indicators",
+      "hasVariables": false,
+      "children": ["KIMP_POP_STRUCTURE", "KIMP_POP_MIGRATION"],
+      "levels": [1]
+    },
+    {
+      "id": "KIMP_POP_STRUCTURE",
+      "parentId": "KIMP_POP",
+      "name": "Population structure",
+      "hasVariables": false,
+      "children": ["KIMP_POP_AGE", "KIMP_POP_DENSITY"],
+      "levels": [1, 2]
+    },
+    {
+      "id": "KIMP_POP_AGE",
+      "parentId": "KIMP_POP_STRUCTURE",
+      "name": "Population by age groups",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2, 3]
+    },
+    {
+      "id": "KIMP_POP_DENSITY",
+      "parentId": "KIMP_POP_STRUCTURE",
+      "name": "Population density",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2, 3]
+    },
+    {
+      "id": "KIMP_POP_MIGRATION",
+      "parentId": "KIMP_POP",
+      "name": "Migration balance",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    }
+  ]
+}

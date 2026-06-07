@@ -1,0 +1,72 @@
+{
+  "variableId": "KIMP_VAR_GDP",
+  "subjectId": "KIMP_ECO_GDP",
+  "subjectName": "Gross domestic product",
+  "variableName": "Imported GDP sample variable",
+  "variableSubname": "Simple local JSON data for cache import",
+  "regions": [
+    {
+      "id": "PL",
+      "name": "Poland",
+      "values": [
+        {
+          "year": "2021",
+          "val": "100.0",
+          "attrId": null
+        },
+        {
+          "year": "2022",
+          "val": "106.4",
+          "attrId": null
+        },
+        {
+          "year": "2023",
+          "val": "112.7",
+          "attrId": null
+        }
+      ]
+    },
+    {
+      "id": "PL12",
+      "name": "Mazowieckie",
+      "values": [
+        {
+          "year": "2021",
+          "val": "120.5",
+          "attrId": null
+        },
+        {
+          "year": "2022",
+          "val": "128.2",
+          "attrId": null
+        },
+        {
+          "year": "2023",
+          "val": "135.9",
+          "attrId": null
+        }
+      ]
+    },
+    {
+      "id": "PL21",
+      "name": "Malopolskie",
+      "values": [
+        {
+          "year": "2021",
+          "val": "88.1",
+          "attrId": null
+        },
+        {
+          "year": "2022",
+          "val": "92.4",
+          "attrId": null
+        },
+        {
+          "year": "2023",
+          "val": "97.6",
+          "attrId": null
+        }
+      ]
+    }
+  ]
+}

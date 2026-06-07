@@ -1,0 +1,36 @@
+{
+  "subjects": [
+    {
+      "id": "KIMP_ECO",
+      "parentId": null,
+      "name": "Economy indicators",
+      "hasVariables": false,
+      "children": ["KIMP_ECO_GDP", "KIMP_ECO_INVEST", "KIMP_ECO_PRICES"],
+      "levels": [1]
+    },
+    {
+      "id": "KIMP_ECO_GDP",
+      "parentId": "KIMP_ECO",
+      "name": "Gross domestic product",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    },
+    {
+      "id": "KIMP_ECO_INVEST",
+      "parentId": "KIMP_ECO",
+      "name": "Investment outlays",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    },
+    {
+      "id": "KIMP_ECO_PRICES",
+      "parentId": "KIMP_ECO",
+      "name": "Consumer prices",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "subjects": [
+    {
+      "id": "KIMP_ENV",
+      "parentId": null,
+      "name": "Environment indicators",
+      "hasVariables": false,
+      "children": ["KIMP_ENV_AIR", "KIMP_ENV_WATER", "KIMP_ENV_WASTE"],
+      "levels": [1]
+    },
+    {
+      "id": "KIMP_ENV_AIR",
+      "parentId": "KIMP_ENV",
+      "name": "Air quality",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    },
+    {
+      "id": "KIMP_ENV_WATER",
+      "parentId": "KIMP_ENV",
+      "name": "Water consumption",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    },
+    {
+      "id": "KIMP_ENV_WASTE",
+      "parentId": "KIMP_ENV",
+      "name": "Municipal waste",
+      "hasVariables": false,
+      "children": [],
+      "levels": [1, 2]
+    }
+  ]
+}
